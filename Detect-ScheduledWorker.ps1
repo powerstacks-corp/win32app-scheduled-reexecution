@@ -101,6 +101,35 @@ Catch {
     Exit 1
 }
 
+#### OPTIONAL: Verify the payload's work is still in place ####
+#
+# Use this when the worker's payload could be reverted between runs:
+# a certificate that could be deleted, a file that could be removed,
+# a scheduled task that could be unregistered, a registry value that
+# could be changed. If the verification fails, return "not installed"
+# so Intune re-runs the worker now instead of waiting out the full
+# interval with broken state on the device.
+#
+# To enable: implement Test-PayloadStillInPlace and uncomment the
+# Function + If block below. The function must return $true when the
+# work is still in place and $false when it has been reverted.
+#
+# Example: a certificate is still in the Local Machine store
+#     return [bool](Get-ChildItem Cert:\LocalMachine\My |
+#         Where-Object { $_.Subject -like '*MyCertSubject*' })
+
+# Function Test-PayloadStillInPlace {
+#     # Return $true if the payload's work is still present.
+#     # Return $false to trigger a re-run.
+#     return $true
+# }
+#
+# If (-not (Test-PayloadStillInPlace)) {
+#     Write-Host "Payload verification failed. Re-run required."
+#     Exit 1
+# }
+####
+
 $AgeDays = ((Get-Date).ToUniversalTime() - $LastRun.ToUniversalTime()).TotalDays
 
 If ($AgeDays -ge $IntervalDays) {
